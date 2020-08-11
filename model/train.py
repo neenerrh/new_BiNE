@@ -179,12 +179,12 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
     ndcg_list = []
     rr_list = []
     
-      for u in test_u:
+    for u in test_u:
         tmp_r = sorted(recommend_dict[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
         tmp_t = sorted(test_rate[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []
         tmp_t_list = []
-        for (item, rate) in tmp_r:
+    for (item, rate) in tmp_r:
             tmp_r_list.append(item)
     
     

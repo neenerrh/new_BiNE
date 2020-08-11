@@ -16,6 +16,7 @@ from sklearn import metrics
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score,auc,precision_recall_fscore_support
+from functools import cmp_to_key
 
 
 def init_embedding_vectors(node_u, node_v, node_list_u, node_list_v, args):
@@ -180,8 +181,8 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
     rr_list = []
 
     for u in test_u:
-        tmp_r = sorted(recommend_dict[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
-        tmp_t = sorted(test_rate[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(test_rate[u]),top_n)]
+        tmp_r = sorted(recommend_dict[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
+        tmp_t = sorted(test_rate[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []
         tmp_t_list = []
         for (item, rate) in tmp_r:

@@ -181,6 +181,14 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
     rr_list = []
 
     for u in test_u:
+        
+        def cmp(x, y):                   # emulate cmp from Python 2
+              if (x< y):
+                  return -1
+              elif (x == y):
+                  return 0
+              elif (x > y):
+                  return 1
         tmp_r = sorted(recommend_dict[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
         tmp_t = sorted(test_rate[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []

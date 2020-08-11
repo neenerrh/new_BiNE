@@ -179,34 +179,16 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
     ndcg_list = []
     rr_list = []
     
-    
-    
-        #tmp_r = sorted(recommend_dict[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
-    from functools import cmp_to_key   # required for cmp_to_key
-
-        
-
-   
-
- 
-      
-
-    for u in test_u:      
-
-        from functools import cmp_to_key
-        def my_key(x, y):
-                return x[1],y[1]
-        tmp_r=sorted(recommend_dict[u].items(), key=cmp_to_key(my_key()), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
-          #tmp_r=sorted(recommend_dict[u].items(), key=cmp_to_key(lambda x, y: x[1],y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
-       # tmp_r = sorted((recommend_dict[u].items()), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]    
-        
-                 
-                     
+      for u in test_u:
+        tmp_r = sorted(recommend_dict[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
         tmp_t = sorted(test_rate[u].items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []
         tmp_t_list = []
         for (item, rate) in tmp_r:
             tmp_r_list.append(item)
+    
+    
+    
 
         for (item, rate) in tmp_t:
             tmp_t_list.append(item)

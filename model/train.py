@@ -381,7 +381,7 @@ def train_by_sampling(args):
                 visited_v[v] = index_list[-1]+3
             # adj_list_u= node_list_u[z]['embedding_vectors'].dot(context_dict_u[u].T)
                 # adj_list_v= node_list_v[z]['embedding_vectors'].dot(context_dict_v[v].T)
-            #save_adj_to_file(node_list_u,adj_list_v,model_path,args)  
+            #save_adj_to_file(node_list_u,node_list_v,model_path,args)  
                 
 
             update_u, update_v, tmp_loss = KL_divergence(edge_dict_u, u, v, node_list_u, node_list_v, lam, gamma)

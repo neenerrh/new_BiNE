@@ -528,7 +528,7 @@ def save_to_file(node_list_u,node_list_v,model_path,args):
        # for u in node_list_u:
          #   fw_u.write(u+" "+ ndarray_tostring(node_list_u[u]['embedding_vectors']))
    # with open(args.adj_v,"w") as fw_v:
-        #for v in adj_v:
+        #for v in node_list_v:
         #    fw_v.write(v+" "+ndarray_tostring(node_list_v[v]['embedding_vectors']))
 
 def main():

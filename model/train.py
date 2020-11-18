@@ -537,10 +537,10 @@ def main():
                             formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
 
-    parser.add_argument('--train-data', default=r'../data/mooc/rating_train.dat',
+    parser.add_argument('--train-data', default=r'../data/mooc/ratings_train.dat',
                         help='Input graph file.')
 
-    parser.add_argument('--test-data', default=r'../data/mooc/rating_test.dat')
+    parser.add_argument('--test-data', default=r'../data/mooc/ratings_test.dat')
 
     parser.add_argument('--model-name', default='mooc',
                         help='name of model.')

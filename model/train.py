@@ -542,7 +542,7 @@ def main():
 
     parser.add_argument('--test-data', default=r'../data/mooc/ratings_test.dat')
 
-    parser.add_argument('--model-name', default='mooc',
+    parser.add_argument('--model-name', default='data/mooc',
                         help='name of model.')
 
     parser.add_argument('--vectors-u', default=r'../data/mooc/vectors_u.dat',

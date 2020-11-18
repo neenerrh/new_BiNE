@@ -420,7 +420,8 @@ def train(args):
     print('alpha : %0.4f, beta : %0.4f, gamma : %0.4f, lam : %0.4f, p : %0.4f, ws : %d, ns : %d, maxT : % d, minT : %d, max_iter : %d, d : %d' % (alpha, beta, gamma, lam, args.p, args.ws, args.ns,args.maxT,args.minT,args.max_iter, args.d))
     print('========== processing data ===========')
     print(model_path)
-    dul = DataUtils(model_path)  
+    dul = DataUtils(model_path)
+    dul.split_data(args.testRatio)
     
     if args.rec:
         test_user, test_item, test_rate = dul.read_data(args.test_data)
@@ -536,18 +537,18 @@ def main():
                             formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
 
-    parser.add_argument('--train-data', default=r'../data/dblp/rating_train.dat',
+    parser.add_argument('--train-data', default=r'../data/mooc/rating_train.dat',
                         help='Input graph file.')
 
-    parser.add_argument('--test-data', default=r'../data/dblp/rating_test.dat')
+    parser.add_argument('--test-data', default=r'../data/mooc/rating_test.dat')
 
-    parser.add_argument('--model-name', default='dblp',
+    parser.add_argument('--model-name', default='mooc',
                         help='name of model.')
 
-    parser.add_argument('--vectors-u', default=r'../data/dblp/vectors_u.dat',
+    parser.add_argument('--vectors-u', default=r'../data/mooc/vectors_u.dat',
                         help="file of embedding vectors of U")
 
-    parser.add_argument('--vectors-v', default=r'../data/dblp/vectors_v.dat',
+    parser.add_argument('--vectors-v', default=r'../data/mooc/vectors_v.dat',
                         help="file of embedding vectors of V")
     parser.add_argument('--adj-u', default=r'../data/dblp/adj_u.dat',
                         help="file of adj list of U")
@@ -606,7 +607,7 @@ def main():
 
     parser.add_argument('--mode', default='hits', type=str,
                         help='metrics of centrality')
-    parser.add_argument('--testRatio', type=float, default=0.20,
+    parser.add_argument('--testRatio', type=float, default=0.60,
                         help="Test to training ratio.")
 
     args = parser.parse_args()

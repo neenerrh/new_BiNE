@@ -68,29 +68,31 @@ class GraphUtils(object):
         max_a_u, min_a_u,max_a_v,min_a_v = 0, 100000, 0, 100000
 
         for node in self.G.nodes():
-            if node[0] == "u":
+            if node[0] == "U":
                 if max_a_u < a[node]:
                     max_a_u = a[node]
                 if min_a_u > a[node]:
                     min_a_u = a[node]
-            if node[0] == "i":
+            if node[0] == "C":
                 if max_a_v < a[node]:
                     max_a_v = a[node]
                 if min_a_v > a[node]:
                     min_a_v = a[node]
 
         for node in self.G.nodes():
-            if node[0] == "u":
+            if node[0] == "U":
                 if max_a_u-min_a_u != 0:
                     self.authority_u[node] = (float(a[node])-min_a_u) / (max_a_u-min_a_u)
                 else:
                     self.authority_u[node] = 0
-            if node[0] == 'i':
+            if node[0] == 'C':
                 if max_a_v-min_a_v != 0:
                     self.authority_v[node] = (float(a[node])-min_a_v) / (max_a_v-min_a_v)
                 else:
                     self.authority_v[node] = 0
-
+        print("authority u and v")
+        print(self.authority_u)
+        print(self.authority_v)
     def homogeneous_graph_random_walks(self, percentage, maxT, minT):
         # print(len(self.node_u),len(self.node_v))
         A = bi.biadjacency_matrix(self.G, self.node_u, self.node_v, dtype=np.float,weight='weight', format='csr')
@@ -110,7 +112,7 @@ class GraphUtils(object):
 
     def get_random_walks_restart(self, datafile, hits_dict, percentage, maxT, minT):
         if datafile is None:
-            datafile = os.path.join(self.model_path,"rating_train.dat")
+            datafile = os.path.join(self.model_path,"ratings_train.dat")
         G = graph.load_edgelist(datafile, undirected=True)
         print("number of nodes: {}".format(len(G.nodes())))
         print("walking...")
@@ -145,7 +147,7 @@ class GraphUtils(object):
 
     def get_random_walks_restart_for_large_bipartite_graph_without_generating(self, datafile, hits_dict, percentage, maxT, minT, node_type='u'):
         if datafile is None:
-            datafile = os.path.join(self.model_path,"rating_train.dat")
+            datafile = os.path.join(self.model_path,"ratings_train.dat")
         G = graph.load_edgelist(datafile, undirected=True)
         cnt = 0
         for n in G.nodes():

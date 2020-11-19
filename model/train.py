@@ -537,10 +537,10 @@ def main():
                             formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
 
-    parser.add_argument('--train-data', default=r'../data/mooc/ratings_train.dat',
+    parser.add_argument('--train-data', default=r'../data/mooc/ratings_test.dat',
                         help='Input graph file.')
 
-    parser.add_argument('--test-data', default=r'../data/mooc/ratings_test.dat')
+    parser.add_argument('--test-data', default=r'../data/mooc/ratings_train.dat')
 
     parser.add_argument('--model-name', default='data/mooc',
                         help='name of model.')
@@ -590,7 +590,7 @@ def main():
 
     parser.add_argument('--lam', default=0.025, type=float,
                         help='learning rate lambda.')
-    parser.add_argument('--max-iter', default=100, type=int,
+    parser.add_argument('--max-iter', default=500, type=int,
                         help='maximal number of iterations.')
 
     parser.add_argument('--top-n', default=10, type=int,

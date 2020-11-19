@@ -324,6 +324,7 @@ def train_by_sampling(args):
     print('alpha : %0.4f, beta : %0.4f, gamma : %0.4f, lam : %0.4f, p : %0.4f, ws : %d, ns : %d, maxT : % d, minT : %d, max_iter : %d, d : %d' % (alpha, beta, gamma, lam, args.p, args.ws, args.ns,args.maxT,args.minT,args.max_iter, args.d))
     print('========== processing data ===========')
     dul = DataUtils(model_path)
+    dul.split_data(args.testRatio)
     if args.rec:
         test_user, test_item, test_rate = dul.read_data(args.test_data)
     print("constructing graph....")

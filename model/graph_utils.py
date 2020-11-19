@@ -284,7 +284,7 @@ class GraphUtils(object):
         indptr = csr_dict.get("indptr")
         indices = csr_dict.get("indices")
         col_index = 0
-        print (A)
+       
         with open(datafile,'w') as fw:
             for row in range(M):
                 for col in range(indptr[row],indptr[row+1]):

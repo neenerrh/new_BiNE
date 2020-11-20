@@ -63,7 +63,7 @@ class GraphUtils(object):
         if mode == 'degree_centrality':
             a = nx.degree_centrality(self.G)
         else:
-            h, a = nx.hits(self.G)
+            h, a = nx.hits(self.G,max_iter=1000)
 
         max_a_u, min_a_u,max_a_v,min_a_v = 0, 100000, 0, 100000
 

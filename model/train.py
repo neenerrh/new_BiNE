@@ -407,8 +407,8 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
                   return 1
         tmp_r = sorted(recommend_dict[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
        
-        print(test_rate[u])
-        tmp_t = sorted(test_rate[u].items, key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
+        #print(test_rate[u].items)
+        tmp_t = sorted(test_rate[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []
         tmp_t_list = []
         for (item, rate) in tmp_r:
@@ -648,26 +648,27 @@ def train_by_point(args):
     #files.download('/content/new_BiNE/data/mooc/months1/ratings_train.csv')
     test_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_test.csv',index=False,header=False)
     #files.download('/content/new_BiNE/data/mooc/months1/ratings_test.csv')
-    train_user=list(train_data.user.unique())
-    train_item=list(train_data.item.unique())
+    #train_user=list(train_data.user.unique())
+    #train_item=list(train_data.item.unique())
     #train_rate=list(train_data.label)
-    train_rate=train_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
+    #train_rate=train_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
     
-    print(train_rate)  
-    #train_user,train_item,train_rate=dul.read_train_data(args.train_data)
-    test_user=list(test_data.user.unique())
-    test_item=list(test_data.item.unique())
+    #print(train_rate)  
+    
+    #test_user=list(test_data.user.unique())
+    #test_item=list(test_data.item.unique())
     #test_rate=list(test_data.label)
-    test_rate=test_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
-    print(test_rate)
+    #test_rate=test_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
+    #print(test_rate)
     #test_rate.items()=1      # for each elem in the list datastreams
            
     #print(test_rate)   
-  
+    train_user,train_item,train_rate=dul.read_train_data(args.train_data)
     n_train=len(train_item)
     
     
-    #test_user, test_item, test_rate = dul.read_test_data(args.test_data)
+    test_user, test_item, test_rate = dul.read_test_data(args.test_data)
+    print(test_rate)
     items_list=list(train_item) + list(test_item)
     res2 = [] 
     [res2.append(x) for x in items_list if x not in res2]
@@ -1033,7 +1034,7 @@ def main():
                         help='learning rate lambda.')
     parser.add_argument('--reg', default=0.01, type=float,
                         help='learning rate lambda.')
-    parser.add_argument('--max-iter', default=1, type=int,
+    parser.add_argument('--max-iter', default=50, type=int,
                         help='maximal number of iterations.')
 
     parser.add_argument('--top-n', default=10, type=int,

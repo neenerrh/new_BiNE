@@ -37,7 +37,7 @@ class GraphUtils(object):
         with open(filename, encoding="UTF-8") as fin:
             line = fin.readline()
             while line:
-                user, item, rating = line.strip().split("\t")
+                user, item, rating = line.strip().split(",")
                 if self.edge_dict_u.get(user) is None:
                     self.edge_dict_u[user] = {}
                 if self.edge_dict_v.get(item) is None:

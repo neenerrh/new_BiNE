@@ -11,12 +11,14 @@ from graph_utils import GraphUtils
 import random
 import math
 import os
+from scipy.special import expit
 import pandas as pd
 from sklearn import metrics
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import average_precision_score,auc,precision_recall_fscore_support
 from functools import cmp_to_key
+from google.colab import files
 
 
 def init_embedding_vectors2(node_u, node_v, items_list,node_list_u, node_list_v, args):
@@ -277,11 +279,11 @@ def Log_Like2(u,i,j ,node_list_u, node_list_v, lam, reg,gamma):
     r_uj = float(U.dot(J.T)) 
     r_uij= r_ui-r_uj
     loss_func = np.exp(-r_uij) / (1.0 + np.exp(-r_uij))
-
+    #loss_func= expit(r_uij)
     #r_ui = np.dot(self.U[u], self.V[i].T) + self.biasV[i]
     #r_uj = np.dot(self.U[u], self.V[j].T) + self.biasV[j]
     #r_uij = r_ui - r_uj
-    #loss_func = 1.0 / (1 + np.exp(-r_uij))
+    sigmod = 1.0 / (1 + np.exp(-r_uij))
 
   
     update_u -= gamma*lam * (loss_func * (node_list_v[j]['embedding_vectors'] - node_list_v[i]['embedding_vectors']) - reg * node_list_u[u]['embedding_vectors'])
@@ -292,7 +294,7 @@ def Log_Like2(u,i,j ,node_list_u, node_list_v, lam, reg,gamma):
     #biasV_j += -lam * gamma*(-loss_func + reg * biasV[str(j)])
     
     try:
-        loss += gamma * (math.log(loss_func) )
+        loss += gamma * (math.log(sigmod) )
     except:
         pass
         # print "KL:",
@@ -404,7 +406,9 @@ def top_N(test_u, test_v, test_rate, node_list_u, node_list_v, top_n):
               elif (x > y):
                   return 1
         tmp_r = sorted(recommend_dict[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(recommend_dict[u]),top_n)]
-        tmp_t = sorted(test_rate[u].items(), key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
+       
+        print(test_rate[u])
+        tmp_t = sorted(test_rate[u].items, key=cmp_to_key(lambda x, y: cmp(x[1], y[1])), reverse=True)[0:min(len(test_rate[u]),top_n)]
         tmp_r_list = []
         tmp_t_list = []
         for (item, rate) in tmp_r:
@@ -636,10 +640,34 @@ def train_by_point(args):
     print('alpha : %0.4f, beta : %0.4f, gamma : %0.4f, lam : %0.4f, p : %0.4f, ws : %d, ns : %d, maxT : % d, minT : %d, max_iter : %d, d : %d' % (alpha, beta, gamma, lam, args.p, args.ws, args.ns,args.maxT,args.minT,args.max_iter, args.d))
     print('========== processing data ===========')
     dul = DataUtils(model_path)
-    dul.split_data(args.testRatio)
-    train_user,train_item,train_rate=dul.read_train_data(args.train_data)
+    data = pd.read_csv('/content/new_BiNE/data/mooc/months1/march_users1.csv')
+    data = data.rename(columns={'user  ': 'user', 'item ':'item','label ':'label'})
+   
+    train_data,test_data= dul.split_by_ratio(data, test_size=args.testRatio)
+    train_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_train.csv',index=False,header=False)
+    #files.download('/content/new_BiNE/data/mooc/months1/ratings_train.csv')
+    test_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_test.csv',index=False,header=False)
+    #files.download('/content/new_BiNE/data/mooc/months1/ratings_test.csv')
+    train_user=list(train_data.user.unique())
+    train_item=list(train_data.item.unique())
+    #train_rate=list(train_data.label)
+    train_rate=train_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
+    
+    print(train_rate)  
+    #train_user,train_item,train_rate=dul.read_train_data(args.train_data)
+    test_user=list(test_data.user.unique())
+    test_item=list(test_data.item.unique())
+    #test_rate=list(test_data.label)
+    test_rate=test_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
+    print(test_rate)
+    #test_rate.items()=1      # for each elem in the list datastreams
+           
+    #print(test_rate)   
+  
     n_train=len(train_item)
-    test_user, test_item, test_rate = dul.read_test_data(args.test_data)
+    
+    
+    #test_user, test_item, test_rate = dul.read_test_data(args.test_data)
     items_list=list(train_item) + list(test_item)
     res2 = [] 
     [res2.append(x) for x in items_list if x not in res2]
@@ -683,7 +711,7 @@ def train_by_point(args):
             if str(u) not in train_user:
                 continue
             # sample a positive item from the observed items
-            i = random.sample(train_item, 1)
+            i = random.sample(list(train_item), 1)
             i=i[0]
             #z = random.sample(user_ratings_train[u], 1)
             # sample a negative item from the unobserved items
@@ -784,7 +812,7 @@ def train_by_point(args):
             #biasV[i]+= biasV_i
             #biasV[j]+= biasV_j
             
-        print(tmp_loss)    
+        
         delta_loss = abs(loss - last_loss)
         #if last_loss > loss:
             #lam *= 1.05
@@ -794,8 +822,8 @@ def train_by_point(args):
         #print(delta_loss)
         last_loss = loss
         
-        if delta_loss < epsilon:
-            break
+        #if delta_loss < epsilon:
+            #break
         sys.stdout.write(s1)
         sys.stdout.flush()
   
@@ -950,10 +978,10 @@ def main():
                             formatter_class=ArgumentDefaultsHelpFormatter,
                             conflict_handler='resolve')
 
-    parser.add_argument('--train-data', default=r'../data/mooc/months1/ratings_test.dat',
+    parser.add_argument('--train-data', default=r'../data/mooc/months1/ratings_train.csv',
                         help='Input graph file.')
 
-    parser.add_argument('--test-data', default=r'../data/mooc/months1/ratings_train.dat')
+    parser.add_argument('--test-data', default=r'../data/mooc/months1/ratings_test.csv')
 
     parser.add_argument('--model-name', default='data/mooc',
                         help='name of model.')
@@ -1005,7 +1033,7 @@ def main():
                         help='learning rate lambda.')
     parser.add_argument('--reg', default=0.01, type=float,
                         help='learning rate lambda.')
-    parser.add_argument('--max-iter', default=50, type=int,
+    parser.add_argument('--max-iter', default=1, type=int,
                         help='maximal number of iterations.')
 
     parser.add_argument('--top-n', default=10, type=int,
@@ -1022,7 +1050,7 @@ def main():
 
     parser.add_argument('--mode', default='hits', type=str,
                         help='metrics of centrality')
-    parser.add_argument('--testRatio', type=float, default=0.60,
+    parser.add_argument('--testRatio', type=float, default=0.40,
                         help="Test to training ratio.")
 
     args = parser.parse_args()

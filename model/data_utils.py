@@ -6,6 +6,7 @@ import random
 from io import open
 import os
 import numpy as np
+from collections import defaultdict
 
 class DataUtils(object):
     def __init__(self, model_path):
@@ -126,7 +127,20 @@ class DataUtils(object):
                 items.add(item)
                 line = fin.readline()
         return users, items, rates 
-       
+
+    def load_data(self, path):
+        user_ratings = defaultdict(set)
+        items=[]
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                u, i ,rate= line.strip().split(",")
+                #u = int(u)
+                #i = int(i)
+                items.append(i)
+                user_ratings[u].add(i)
+        res = [] 
+        [res.append(x) for x in items if x not in res]         
+        return user_ratings,res   
 
     def _check_and_convert_ratio(self,test_size, multi_ratios):
           if not test_size and not multi_ratios:

@@ -542,9 +542,30 @@ def train_by_sampling(args):
     print('alpha : %0.4f, beta : %0.4f, gamma : %0.4f, lam : %0.4f, p : %0.4f, ws : %d, ns : %d, maxT : % d, minT : %d, max_iter : %d, d : %d' % (alpha, beta, gamma, lam, args.p, args.ws, args.ns,args.maxT,args.minT,args.max_iter, args.d))
     print('========== processing data ===========')
     dul = DataUtils(model_path)
-    dul.split_data(args.testRatio)
-    if args.rec:
-        test_user, test_item, test_rate = dul.read_test_data(args.test_data)
+    data = pd.read_csv('/content/new_BiNE/data/mooc/months1/march_users1.csv')
+    data = data.rename(columns={'user  ': 'user', 'item ':'item','label ':'label'})
+   
+    train_data,test_data= dul.split_by_ratio(data, test_size=args.testRatio)
+    train_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_train.csv',index=False,header=False)
+    #files.download('/content/new_BiNE/data/mooc/months1/ratings_train.csv')
+    test_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_test.csv',index=False,header=False)
+    
+    train_user,train_item,train_rate=dul.read_train_data(args.train_data)
+    test_user, test_item, test_rate = dul.read_test_data(args.test_data)
+    n_train=len(train_item) 
+    items_list=list(train_item) + list(test_item)
+    res2 = [] 
+    [res2.append(x) for x in items_list if x not in res2]
+    items_list=res2 
+    users_list=list(train_user) + list(test_user)
+    res3 = [] 
+    [res3.append(x) for x in users_list if x not in res3]
+    users_list=res3  
+    #if args.rec:
+        #test_user, test_item, test_rate = dul.read_data(args.test_data)
+
+    user_ratings_train,items= dul.load_data(args.train_data)
+
     print("constructing graph....")
     gul = GraphUtils(model_path)
     gul.construct_training_graph(args.train_data)
@@ -570,7 +591,7 @@ def train_by_sampling(args):
             length = len(context_dict_u[u])
             random.shuffle(context_dict_u[u])
             if visited_u.get(u) < length:
-                # print(u)
+               
                 index_list = list(range(visited_u.get(u),min(visited_u.get(u)+1,length)))
                 for index in index_list:
                     context_u = context_dict_u[u][index]
@@ -647,28 +668,10 @@ def train_by_point(args):
     train_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_train.csv',index=False,header=False)
     #files.download('/content/new_BiNE/data/mooc/months1/ratings_train.csv')
     test_data.to_csv('/content/new_BiNE/data/mooc/months1/ratings_test.csv',index=False,header=False)
-    #files.download('/content/new_BiNE/data/mooc/months1/ratings_test.csv')
-    #train_user=list(train_data.user.unique())
-    #train_item=list(train_data.item.unique())
-    #train_rate=list(train_data.label)
-    #train_rate=train_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
     
-    #print(train_rate)  
-    
-    #test_user=list(test_data.user.unique())
-    #test_item=list(test_data.item.unique())
-    #test_rate=list(test_data.label)
-    #test_rate=test_data.groupby('user')['item','label'].apply(lambda x: x.set_index('item').to_dict(orient='index')).to_dict()
-    #print(test_rate)
-    #test_rate.items()=1      # for each elem in the list datastreams
-           
-    #print(test_rate)   
     train_user,train_item,train_rate=dul.read_train_data(args.train_data)
-    n_train=len(train_item)
-    
-    
     test_user, test_item, test_rate = dul.read_test_data(args.test_data)
-    print(test_rate)
+    n_train=len(train_item) 
     items_list=list(train_item) + list(test_item)
     res2 = [] 
     [res2.append(x) for x in items_list if x not in res2]
@@ -679,18 +682,29 @@ def train_by_point(args):
     users_list=res3  
     #if args.rec:
         #test_user, test_item, test_rate = dul.read_data(args.test_data)
+
+    user_ratings_train,items= dul.load_data(args.train_data)
+
     print("constructing graph....")
     gul = GraphUtils(model_path)
     gul.construct_training_graph(args.train_data)
     edge_dict_u = gul.edge_dict_u
+
+   
+    
     edge_list = gul.edge_list
+  
     walk_generator(gul,args)
     print("getting context and negative samples....")
     
-        
-    context_dict_u, context_dict_v, node_u, node_v = get_context(gul, args)
+    context_dict_u, neg_dict_u, context_dict_v, neg_dict_v, node_u, node_v = get_context_and_negative_samples(gul, args)    
+    #context_dict_u, context_dict_v, node_u, node_v = get_context(gul, args)
     node_list_u, node_list_v = {}, {}
     init_embedding_vectors2(node_u, node_v,items_list, node_list_u, node_list_v, args)
+    print(items_list)
+    print(len(items_list))
+    print(users_list)
+    print(len(users_list))
     last_loss, count, epsilon = 0, 0, 0.01  
     biasV = np.random.rand(len(items_list)) * 0.01
     biasV=dict(zip(items_list,biasV))
@@ -704,90 +718,138 @@ def train_by_point(args):
         #random.shuffle(edge_list)
         for user in range(len(node_list_u.keys())):
             u = random.sample(users_list,1)
-            #print(f"u {u} ")
+           
             u=u[0]
+
+           
             #if str(u) not in user_ratings_train.keys():
                 #print(f"string u {str(u)} ")             
                 #continue
             if str(u) not in train_user:
                 continue
             # sample a positive item from the observed items
-            i = random.sample(list(train_item), 1)
+            i = random.sample(user_ratings_train[u], 1)
             i=i[0]
+            
             #z = random.sample(user_ratings_train[u], 1)
             # sample a negative item from the unobserved items
             j = random.sample(items_list, 1)
             j=j[0]
-            #while j in train_item:
-                #j = random.sample(items_list, 1)
-                #j=j[0]
+            while j in user_ratings_train[u]:
+                j = random.sample(items_list, 1)
+                j=j[0]
             
 
             length = len(context_dict_u[u])
-            
             random.shuffle(context_dict_u[u])
             if visited_u.get(u) < length:
                 # print(u)
                 index_list = list(range(visited_u.get(u),min(visited_u.get(u)+1,length)))
                 for index in index_list:
                     context_u = context_dict_u[u][index]
-                   
+                    neg_u = neg_dict_u[u][index]
                     # center,context,neg,node_list,eta
-                    for z in context_u:                       
-                        tmp_z, tmp_loss = skip_gram2(u, z, node_list_u, lam, alpha)
+                    for z in context_u:
+                        tmp_z, tmp_loss = skip_gram1(u, z, neg_u, node_list_u, lam, alpha)
                         node_list_u[z]['embedding_vectors'] += tmp_z
                         loss += tmp_loss
                 visited_u[u] = index_list[-1]+3
 
-            
-            
-            length = len(context_dict_v[i]) 
-            random.shuffle(context_dict_v[i])            
+            length = len(context_dict_v[i])
+            random.shuffle(context_dict_v[i])
             if visited_v.get(i) < length:
                 # print(v)
                 index_list = list(range(visited_v.get(i),min(visited_v.get(i)+1,length)))
                 for index in index_list:
                     context_v = context_dict_v[i][index]
-                   
+                    neg_v = neg_dict_v[i][index]
                     # center,context,neg,node_list,eta
-
-                    for z in context_v:                       
-                        #if z not in train_item:
-                          #continue                        
-                        tmp_z, tmp_loss = skip_gram2(i, z, node_list_v, lam, beta)
-                        node_list_v[z]['embedding_vectors'] += tmp_z
+                    for z in context_v:
+                        tmp_z, tmp_loss = skip_gram1(i, z, neg_v, node_list_v, lam, beta)
+                        node_list_v[i]['embedding_vectors'] += tmp_z
                         loss += tmp_loss
                 visited_v[i] = index_list[-1]+3
-                #print(node_list_v[i]['embedding_vectors'])
-              
-            if j not in context_dict_v:
-              #name=("embedding_vectors")
-              
-              a=np.zeros(shape=(1,128))
-              #print(a)
-              #l=dict(zip(name,a))
-              #print(l)
-              #node_list_v[j]=dict({'embedding_vectors',a})
-              node_list_v[j]['embedding_vectors']=a
-              #print(node_list_v[j]['embedding_vectors'])
-            else:
-              length = len(context_dict_v[j]) 
-              random.shuffle(context_dict_v[j])            
-              if visited_v.get(j) < length:
+
+            length = len(context_dict_v[j])
+            random.shuffle(context_dict_v[j])
+            if visited_v.get(j) < length:
                 # print(v)
-                  index_list = list(range(visited_v.get(j),min(visited_v.get(j)+1,length)))
-                  for index in index_list:
-                      context_v = context_dict_v[j][index]
+                index_list = list(range(visited_v.get(j),min(visited_v.get(j)+1,length)))
+                for index in index_list:
+                    context_v = context_dict_v[j][index]
+                    neg_v = neg_dict_v[j][index]
+                    # center,context,neg,node_list,eta
+                    for z in context_v:
+                        tmp_z, tmp_loss = skip_gram1(j, z, neg_v, node_list_v, lam, beta)
+                        node_list_v[z]['embedding_vectors'] += tmp_z
+                        loss += tmp_loss
+                visited_v[j] = index_list[-1]+3
+            
+
+            #length = len(context_dict_u[u])            
+            #random.shuffle(context_dict_u[u])
+            #if visited_u.get(u) < length:
+                ## print(u)
+                #index_list = list(range(visited_u.get(u),min(visited_u.get(u)+1,length)))
+                #for index in index_list:
+                    #context_u = context_dict_u[u][index]
+                   
+                    ## center,context,neg,node_list,eta
+                    #for z in context_u:                       
+                        #tmp_z, tmp_loss = skip_gram2(u, z, node_list_u, lam, alpha)
+                        #node_list_u[z]['embedding_vectors'] += tmp_z
+                        #loss += tmp_loss
+                #visited_u[u] = index_list[-1]+3
+
+            
+             
+            #length = len(context_dict_v[i]) 
+            #random.shuffle(context_dict_v[i])            
+            #if visited_v.get(i) < length:
+                ## print(v)
+                #index_list = list(range(visited_v.get(i),min(visited_v.get(i)+1,length)))
+                #for index in index_list:
+                    #context_v = context_dict_v[i][index]
+                   
+                    ## center,context,neg,node_list,eta
+
+                    #for z in context_v:                       
+                        ##if z not in train_item:
+                          ##continue                        
+                        #tmp_z, tmp_loss = skip_gram2(i, z, node_list_v, lam, beta)
+                        #node_list_v[z]['embedding_vectors'] += tmp_z
+                        #loss += tmp_loss
+                #visited_v[i] = index_list[-1]+3
+                ##print(node_list_v[i]['embedding_vectors'])
+              
+            #if j not in context_dict_v:
+              ##name=("embedding_vectors")
+              
+              #a=np.zeros(shape=(1,128))
+              ##print(a)
+              ##l=dict(zip(name,a))
+              ##print(l)
+              ##node_list_v[j]=dict({'embedding_vectors',a})
+              #node_list_v[j]['embedding_vectors']=a
+              ##print(node_list_v[j]['embedding_vectors'])
+            #else:
+              #length = len(context_dict_v[j]) 
+              #random.shuffle(context_dict_v[j])            
+              #if visited_v.get(j) < length:
+                # print(v)
+                  #index_list = list(range(visited_v.get(j),min(visited_v.get(j)+1,length)))
+                  #for index in index_list:
+                      #context_v = context_dict_v[j][index]
                    
                     # center,context,neg,node_list,eta
 
-                      for z in context_v:                       
-                        #if z not in train_item:
-                          #continue                        
-                          tmp_z, tmp_loss = skip_gram2(j, z, node_list_v, lam, beta)
-                          node_list_v[z]['embedding_vectors'] += tmp_z
-                          loss += tmp_loss
-                  visited_v[j] = index_list[-1]+3
+                      #for z in context_v:                       
+                        ##if z not in train_item:
+                          ##continue                        
+                          #tmp_z, tmp_loss = skip_gram2(j, z, node_list_v, lam, beta)
+                          #node_list_v[z]['embedding_vectors'] += tmp_z
+                          #loss += tmp_loss
+                  #visited_v[j] = index_list[-1]+3
                   
 
             # r_ui = np.dot(np.array(node_list_u[u]['embedding_vectors']), np.array(node_list_v[i]['embedding_vectors']).T)
@@ -1055,7 +1117,7 @@ def main():
                         help="Test to training ratio.")
 
     args = parser.parse_args()
-    train_by_point(args)
+    train_by_sampling(args)
 
 if __name__ == "__main__":
     sys.exit(main())

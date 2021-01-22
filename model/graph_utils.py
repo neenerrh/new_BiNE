@@ -9,6 +9,12 @@ from lsh import get_negs_by_lsh
 from io import open
 import os
 import itertools
+import matplotlib.pyplot as plt
+from scipy.sparse import csr_matrix
+from sklearn.metrics.pairwise import cosine_similarity
+from scipy import sparse
+
+
 
 class GraphUtils(object):
     def __init__(self, model_path):
@@ -31,7 +37,7 @@ class GraphUtils(object):
 
     def construct_training_graph(self, filename=None):
         if filename is None:
-            filename = os.path.join(self.model_path, "ratings_train.dat")
+            filename = os.path.join(self.model_path, "ratings_train.csv")
         edge_list_u_v = []
         edge_list_v_u = []
         with open(filename, encoding="UTF-8") as fin:
@@ -56,24 +62,59 @@ class GraphUtils(object):
         self.node_v.sort()
         self.G.add_nodes_from(self.node_u, bipartite=0)
         self.G.add_nodes_from(self.node_v, bipartite=1)
-        self.G.add_weighted_edges_from(edge_list_u_v+edge_list_v_u)
+        self.G.add_weighted_edges_from(edge_list_u_v)
         self.edge_list = edge_list_u_v
-
+        #print(list(self.node_u))
+        #print(list(self.node_v))
+        #print(list(self.edge_list))
+        #nx.draw(self.G)
+        #plt.show()
+        #plt.savefig("path.pdf")
+    def construct_test_graph(self, filename=None):
+        if filename is None:
+            filename = os.path.join(self.model_path, "ratings_test.csv")
+        test_edge_list_u_v = []
+        test_edge_list_v_u = []
+        with open(filename, encoding="UTF-8") as fin:
+            line = fin.readline()
+            while line:
+                user, item, rating = line.strip().split(",")
+                if self.test_edge_dict_u.get(user) is None:
+                    self.test_edge_dict_u[user] = {}
+                if self.test_edge_dict_v.get(item) is None:
+                    self.test_edge_dict_v[item] = {}
+                test_edge_list_u_v.append((user, item, float(rating)))
+                self.test_edge_dict_u[user][item] = float(rating)
+                self.test_edge_dict_v[item][user] = float(rating)
+                test_edge_list_v_u.append((item, user, float(rating)))
+                line = fin.readline()
+        # create bipartite graph
+        self.node_u = list(self.test_edge_dict_u.keys())
+        self.node_v = list(self.test_edge_dict_v.keys())
+       
+        self.node_u.sort()
+        
+        self.node_v.sort()
+        self.G.add_nodes_from(self.node_u, bipartite=0)
+        self.G.add_nodes_from(self.node_v, bipartite=1)
+        self.G.add_weighted_edges_from(test_edge_list_u_v)
+        self.edge_list = test_edge_list_u_v  
+      
     def calculate_centrality(self, mode='hits'):
         if mode == 'degree_centrality':
             a = nx.degree_centrality(self.G)
         else:
-            h, a = nx.hits(self.G,max_iter=1000)
+            h, a = nx.hits(self.G)
 
         max_a_u, min_a_u,max_a_v,min_a_v = 0, 100000, 0, 100000
 
         for node in self.G.nodes():
-            if node[0] == "U":
+            if node[0] == "u":
                 if max_a_u < a[node]:
                     max_a_u = a[node]
                 if min_a_u > a[node]:
                     min_a_u = a[node]
-            if node[0] == "C":
+            if node[0] == "i":
                 if max_a_v < a[node]:
                     max_a_v = a[node]
                 if min_a_v > a[node]:
@@ -90,19 +131,14 @@ class GraphUtils(object):
                     self.authority_v[node] = (float(a[node])-min_a_v) / (max_a_v-min_a_v)
                 else:
                     self.authority_v[node] = 0
-        print("authority u and v")
-        print(self.authority_u)
-        print(self.authority_v)
+
     def homogeneous_graph_random_walks(self, percentage, maxT, minT):
         # print(len(self.node_u),len(self.node_v))
         A = bi.biadjacency_matrix(self.G, self.node_u, self.node_v, dtype=np.float,weight='weight', format='csr')
         row_index = dict(zip(self.node_u, itertools.count()))
         col_index = dict(zip(self.node_v, itertools.count()))
-      
-        
         index_row = dict(zip(row_index.values(), row_index.keys()))
         index_item = dict(zip(col_index.values(), col_index.keys()))
-     
         AT = A.transpose()
         self.save_homogenous_graph_to_file(A.dot(AT),self.fw_u, index_row,index_row)
         self.save_homogenous_graph_to_file(AT.dot(A),self.fw_v, index_item,index_item)
@@ -112,7 +148,7 @@ class GraphUtils(object):
 
     def get_random_walks_restart(self, datafile, hits_dict, percentage, maxT, minT):
         if datafile is None:
-            datafile = os.path.join(self.model_path,"ratings_train.dat")
+            datafile = os.path.join(self.model_path,"rating_train.dat")
         G = graph.load_edgelist(datafile, undirected=True)
         print("number of nodes: {}".format(len(G.nodes())))
         print("walking...")
@@ -131,7 +167,6 @@ class GraphUtils(object):
         matrix_v = self.get_homogenous_graph(AT.dot(A), self.fw_v, index_item, index_item)
         self.G_u, self.walks_u = self.get_random_walks_restart_for_large_bipartite_graph(matrix_u, self.authority_u, percentage=percentage, maxT=maxT, minT=minT)
         self.G_v, self.walks_v = self.get_random_walks_restart_for_large_bipartite_graph(matrix_v, self.authority_v, percentage=percentage, maxT=maxT, minT=minT)
-        
 
     def homogeneous_graph_random_walks_for_large_bipartite_graph_without_generating(self, datafile, percentage, maxT, minT):
         self.G_u, self.walks_u = self.get_random_walks_restart_for_large_bipartite_graph_without_generating(datafile, self.authority_u, percentage=percentage, maxT=maxT, minT=minT, node_type='u')
@@ -147,7 +182,7 @@ class GraphUtils(object):
 
     def get_random_walks_restart_for_large_bipartite_graph_without_generating(self, datafile, hits_dict, percentage, maxT, minT, node_type='u'):
         if datafile is None:
-            datafile = os.path.join(self.model_path,"ratings_train.dat")
+            datafile = os.path.join(self.model_path,"rating_train.dat")
         G = graph.load_edgelist(datafile, undirected=True)
         cnt = 0
         for n in G.nodes():
@@ -157,7 +192,6 @@ class GraphUtils(object):
         print("walking...")
         walks = graph.build_deepwalk_corpus_random_for_large_bibartite_graph(G, hits_dict, percentage=percentage, maxT = maxT, minT = minT, alpha=0,node_type=node_type)
         # print(walks)
-      
         print("walking...ok")
         return G, walks
 
@@ -225,10 +259,8 @@ class GraphUtils(object):
         # generate context and negatives
         if isinstance(G, graph.Graph):
             node_list = G.nodes()
-            node_list= list(node_list)
         elif isinstance(G, list):
             node_list = G
-            node_list= list(node_list)
         word2id = {}
         for i in range(len(node_list)):
             word2id[node_list[i]] = i + 1
@@ -284,7 +316,6 @@ class GraphUtils(object):
         indptr = csr_dict.get("indptr")
         indices = csr_dict.get("indices")
         col_index = 0
-       
         with open(datafile,'w') as fw:
             for row in range(M):
                 for col in range(indptr[row],indptr[row+1]):

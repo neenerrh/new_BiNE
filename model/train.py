@@ -651,6 +651,7 @@ def train_by_sampling(args):
         print("============== testing ===============")
         auc_roc, auc_pr = link_prediction(args)
         print('link prediction metrics: AUC_ROC : %0.4f, AUC_PR : %0.4f' % (round(auc_roc,4), round(auc_pr,4)))
+    print('alpha : %0.4f, beta : %0.4f, gamma : %0.4f, lam : %0.4f, p : %0.4f, ws : %d, ns : %d, maxT : % d, minT : %d, max_iter : %d, d : %d' % (alpha, beta, gamma, lam, args.p, args.ws, args.ns,args.maxT,args.minT,args.max_iter, args.d))
 
 def train_by_point(args):
     model_path = os.path.join('../', args.model_name)

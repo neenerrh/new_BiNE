@@ -702,10 +702,9 @@ def train_by_point(args):
     #context_dict_u, context_dict_v, node_u, node_v = get_context(gul, args)
     node_list_u, node_list_v = {}, {}
     init_embedding_vectors2(node_u, node_v,items_list, node_list_u, node_list_v, args)
-    print(items_list)
-    print(len(items_list))
-    print(users_list)
-    print(len(users_list))
+
+     
+
     last_loss, count, epsilon = 0, 0, 0.01  
     biasV = np.random.rand(len(items_list)) * 0.01
     biasV=dict(zip(items_list,biasV))
